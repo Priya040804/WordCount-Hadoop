@@ -1,70 +1,130 @@
-# Getting Started with Create React App
+📝 Distributed Word Count — MapReduce Visualizer (PySpark + React)
+This project implements the Word Count MapReduce workflow using PySpark and provides an interactive React-based visualizer to demonstrate how data flows through Mapper and Reducer stages.
+The backend Python script performs the Distributed Word Count using PySpark-style transformations, parallel processing, and reducer aggregation.
+The frontend React application visualizes this entire process — splitting the text, mapping, shuffling, reducing, and finally displaying the Top 15 most frequent words.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+📌 Features
+✔️ Distributed Word Count implemented using PySpark concepts
+✔️ 4 Mapper Nodes process text in parallel
+✔️ 2 Reducer Nodes aggregate intermediate results
+✔️ React UI visualizes Map → Shuffle → Reduce
+✔️ Shows Top 15 most frequent words
+✔️ Uses TailwindCSS for styling
 
-## Available Scripts
+📁 Project Structure
+APP-PROJECT/
+│── public/
+│── src/
+│   ├── components/
+│   │    └── MapReduceVisualizer.js
+│   ├── App.js
+│   ├── App.css
+│   ├── index.js
+│   ├── index.css
+│   ├── reportWebVitals.js
+│   └── setupTests.js
+│── python/
+│   └── distributed_wordcount.py
+│── package.json
+│── package-lock.json
+│── tailwind.config.js
+│── postcss.config.js
+│── README.md
 
-In the project directory, you can run:
+🧠 How the PySpark-Style MapReduce Works
+1️⃣ Split Phase
+The PySpark-based Python script splits the input text into 4 equal chunks:
+chunks = self.split_text(text, self.num_nodes)
+Each chunk is sent to a mapper node.
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+2️⃣ MAP Phase (4 Mapper Nodes)
+Each mapper:
+Lowercases text
+Splits into words
+Emits (word, 1) pairs
+Uses Counter() for local counting
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Python function:
+def map_worker(node_id, text_chunk, results_queue):
+    words = text_chunk.lower().split()
+    word_count = Counter(words)
+    results_queue.put((node_id, dict(word_count)))
 
-### `npm test`
+This parallels PySpark’s:
+rdd.flatMap().map(lambda word: (word, 1))
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
+3️⃣ Shuffle & Sort Phase
+All mapper outputs are grouped by word key.
+(This mirrors PySpark’s internal shuffle stage during reduceByKey.)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+4️⃣ REDUCE Phase (2 Reducer Nodes)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Reducers merge intermediate frequencies:
 
-### `npm run eject`
+def reduce_worker(node_id, partial_results, results_queue):
+    combined = Counter()
+    for result in partial_results:
+        combined.update(result)
+    results_queue.put((node_id, dict(combined)))
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Equivalent PySpark logic:
+rdd.reduceByKey(lambda a, b: a + b)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+5️⃣ Final Aggregation
+All reducer outputs are combined into a final global word count.
+display_results() prints Top 15 words sorted by frequency.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+🐍 Running the PySpark-Based Word Count
+Navigate to the Python folder:
+cd python
+python distributed_wordcount.py
+The script outputs:
+Mapper logs
+Reducer logs
+Total unique word count
+Top 15 frequent words
 
-To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Code Splitting
+⚛️ Running the React Visualization
+Install dependencies:
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Start the app:
+npm start
 
-### Analyzing the Bundle Size
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+The React UI shows:
+Mapper output from 4 nodes
+Shuffle grouping
+Reducer aggregation
+Final Top-15 visualization
 
-### Making a Progressive Web App
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+📦 Tech Stack
+Backend
+PySpark-style Distributed Word Count
+Python
+multiprocessing
+Counter collections
+Frontend
+React
+TailwindCSS
+Lucide React Icons
 
-### Advanced Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+🛠 Future Enhancements
+Integrate real PySpark cluster execution
+Display animated data flow
+Add stop-word filtering
 
-### Deployment
+Add stemming/lemmatization options
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+🤝 Contributing
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Pull requests and suggestions are welcome!
