@@ -21,6 +21,20 @@ The frontend React application visualizes this entire process — splitting the 
 
 ✔️ Uses TailwindCSS for styling
 
+
+<img width="1507" height="431" alt="image" src="https://github.com/user-attachments/assets/519ea13a-1930-466c-8865-e16c0ae9cc7c" />
+
+<img width="1512" height="651" alt="image" src="https://github.com/user-attachments/assets/780ce931-b948-4077-a908-e719939eeead" />
+
+<img width="1507" height="681" alt="image" src="https://github.com/user-attachments/assets/3d7be2f7-e4ee-4609-b2fb-45a4d386133d" />
+
+<img width="1501" height="734" alt="image" src="https://github.com/user-attachments/assets/f14de612-0170-45a1-9e16-75ac52046799" />
+
+<img width="1496" height="729" alt="image" src="https://github.com/user-attachments/assets/3c2d91bf-1287-4ba5-a892-8f4b4d7db060" />
+
+
+
+
 **📁 Project Structure**
 
 APP-PROJECT/
