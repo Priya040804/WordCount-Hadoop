@@ -1,0 +1,176 @@
+import multiprocessing as mp
+from collections import Counter
+import time
+import random
+
+def map_worker(node_id, text_chunk, results_queue):
+    """Simulates a mapper node in the cluster"""
+    print(f"[Node {node_id}] Starting MAP phase...")
+    time.sleep(random.uniform(0.1, 0.3))  # Simulate processing time
+    
+    # Count words in this chunk
+    words = text_chunk.lower().split()
+    word_count = Counter(words)
+    
+    print(f"[Node {node_id}] MAP complete. Found {len(words)} words, {len(word_count)} unique")
+    results_queue.put((node_id, dict(word_count)))
+
+def reduce_worker(node_id, partial_results, results_queue):
+    """Simulates a reducer node in the cluster"""
+    print(f"[Reducer {node_id}] Starting REDUCE phase...")
+    time.sleep(random.uniform(0.1, 0.2))  # Simulate processing time
+    
+    # Combine counts from partial results
+    combined = Counter()
+    for result in partial_results:
+        combined.update(result)
+    
+    print(f"[Reducer {node_id}] REDUCE complete. Total unique words: {len(combined)}")
+    results_queue.put((node_id, dict(combined)))
+
+class DistributedWordCount:
+    def __init__(self, num_nodes=4):
+        self.num_nodes = num_nodes
+    
+    def split_text(self, text, num_chunks):
+        """Split text into roughly equal chunks"""
+        words = text.split()
+        chunk_size = len(words) // num_chunks
+        chunks = []
+        
+        for i in range(num_chunks):
+            if i == num_chunks - 1:
+                chunk = ' '.join(words[i * chunk_size:])
+            else:
+                chunk = ' '.join(words[i * chunk_size:(i + 1) * chunk_size])
+            chunks.append(chunk)
+        
+        return chunks
+    
+    def run(self, text):
+        """Main function to run distributed word count"""
+        print(f"\n{'='*60}")
+        print(f"DISTRIBUTED WORD COUNT CLUSTER ({self.num_nodes} nodes)")
+        print(f"{'='*60}\n")
+        
+        # Phase 1: MAP - Split text and distribute to worker nodes
+        print(f"Phase 1: Splitting text across {self.num_nodes} nodes...")
+        chunks = self.split_text(text, self.num_nodes)
+        
+        # Create a queue for results
+        results_queue = mp.Queue()
+        
+        map_processes = []
+        for i in range(self.num_nodes):
+            p = mp.Process(target=map_worker, 
+                          args=(i+1, chunks[i], results_queue))
+            map_processes.append(p)
+            p.start()
+        
+        # Wait for all mappers to complete
+        for p in map_processes:
+            p.join()
+        
+        # Collect mapper results
+        map_results = []
+        while not results_queue.empty():
+            node_id, result = results_queue.get()
+            map_results.append(result)
+        
+        print(f"\n{'='*60}")
+        print(f"MAP phase complete. Collected results from {len(map_results)} nodes")
+        print(f"{'='*60}\n")
+        
+        # Phase 2: REDUCE - Combine results
+        print(f"Phase 2: REDUCE - Combining results...")
+        
+        # Split map results across reducer nodes
+        reducers_per_node = len(map_results) // min(2, self.num_nodes) or 1
+        reduce_chunks = [map_results[i:i+reducers_per_node] 
+                        for i in range(0, len(map_results), reducers_per_node)]
+        
+        # Create new queue for reduce results
+        reduce_queue = mp.Queue()
+        
+        reduce_processes = []
+        for i, chunk in enumerate(reduce_chunks):
+            p = mp.Process(target=reduce_worker, 
+                          args=(i+1, chunk, reduce_queue))
+            reduce_processes.append(p)
+            p.start()
+        
+        # Wait for all reducers to complete
+        for p in reduce_processes:
+            p.join()
+        
+        # Collect and combine final results
+        final_count = Counter()
+        while not reduce_queue.empty():
+            node_id, result = reduce_queue.get()
+            final_count.update(result)
+        
+        print(f"\n{'='*60}")
+        print(f"REDUCE phase complete")
+        print(f"{'='*60}\n")
+        
+        return dict(final_count)
+    
+    def display_results(self, word_count, top_n=10):
+        """Display the top N most frequent words"""
+        sorted_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
+        
+        print(f"\nFINAL RESULTS:")
+        print(f"{'='*60}")
+        print(f"Total unique words: {len(word_count)}")
+        print(f"Total word count: {sum(word_count.values())}")
+        print(f"\nTop {top_n} most frequent words:")
+        print(f"{'-'*60}")
+        print(f"{'Word':<30} {'Count':>10}")
+        print(f"{'-'*60}")
+        
+        for word, count in sorted_words[:top_n]:
+            print(f"{word:<30} {count:>10}")
+        
+        print(f"{'='*60}\n")
+
+
+def main():
+    # Sample text for demonstration
+    sample_text = """
+    Distributed computing is a field of computer science that studies distributed systems.
+    A distributed system is a system whose components are located on different networked 
+    computers which communicate and coordinate their actions by passing messages to one another.
+    The components interact with one another in order to achieve a common goal. Three significant
+    characteristics of distributed systems are concurrency of components, lack of a global clock,
+    and independent failure of components. Examples of distributed systems vary from SOA-based
+    systems to massively multiplayer online games to peer-to-peer applications. Distributed 
+    computing also refers to the use of distributed systems to solve computational problems.
+    In distributed computing, a problem is divided into many tasks, each of which is solved by
+    one or more computers, which communicate with each other via message passing. The word
+    distributed in terms like distributed system, distributed programming, and distributed
+    algorithm originally referred to computer networks where individual computers were physically
+    distributed within some geographical area. The terms are nowadays used in a much wider sense,
+    even referring to autonomous processes that run on the same physical computer and interact
+    with each other via message passing. Distributed systems are groups of networked computers
+    which share a common goal for their work. The terms concurrent computing, parallel computing,
+    and distributed computing have a lot of overlap, and no clear distinction exists between them.
+    """
+    
+    # You can also read from a file:
+    # with open('your_file.txt', 'r', encoding='utf-8') as f:
+    #     sample_text = f.read()
+    
+    # Create and run the distributed word count system
+    cluster = DistributedWordCount(num_nodes=4)
+    word_count = cluster.run(sample_text)
+    cluster.display_results(word_count, top_n=15)
+    
+    print("\nCluster simulation complete!")
+    print("Note: This simulates a distributed cluster using 4 separate processes")
+    print("on your local machine, demonstrating MapReduce principles.\n")
+
+
+if __name__ == "__main__":
+    # Required for Windows multiprocessing
+    mp.freeze_support()
+    main()
