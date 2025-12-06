@@ -1,34 +1,60 @@
 **📝 Distributed Word Count — MapReduce Visualizer (PySpark + React)**
+
 This project implements the Word Count MapReduce workflow using PySpark and provides an interactive React-based visualizer to demonstrate how data flows through Mapper and Reducer stages.
+
 The backend Python script performs the Distributed Word Count using PySpark-style transformations, parallel processing, and reducer aggregation.
 The frontend React application visualizes this entire process — splitting the text, mapping, shuffling, reducing, and finally displaying the Top 15 most frequent words.
 
 **📌 Features**
+
 ✔️ Distributed Word Count implemented using PySpark concepts
+
 ✔️ 4 Mapper Nodes process text in parallel
+
 ✔️ 2 Reducer Nodes aggregate intermediate results
+
 ✔️ React UI visualizes Map → Shuffle → Reduce
+
 ✔️ Shows Top 15 most frequent words
+
 ✔️ Uses TailwindCSS for styling
 
 **📁 Project Structure**
+
 APP-PROJECT/
+
 │── public/
+
 │── src/
+
 │   ├── components/
+
 │   │    └── MapReduceVisualizer.js
+
 │   ├── App.js
+
 │   ├── App.css
+
 │   ├── index.js
+
 │   ├── index.css
+
 │   ├── reportWebVitals.js
+
 │   └── setupTests.js
+
 │── python/
+
 │   └── distributed_wordcount.py
+
 │── package.json
+
 │── package-lock.json
+
 │── tailwind.config.js
+
 │── postcss.config.js
+
 │── README.md
 
 **🧠 How the PySpark-Style MapReduce Works**
